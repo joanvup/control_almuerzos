@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket de Almuerzo</title>
+    <style>
+        /* ... (tus estilos de CSS no cambian) ... */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
+        body {
+            font-family: 'Roboto Mono', monospace;
+            width: 80mm;
+            margin: 0;
+            padding: 5mm;
+            font-size: 10pt;
+        }
+        .ticket-container { text-align: center; }
+        .header { font-size: 12pt; font-weight: bold; margin-bottom: 10px; }
+        .info p { margin: 2px 0; text-align: left; }
+        .qr-code { margin-top: 10px; }
+        .qr-code img { max-width: 100%; }
+        hr { border: 0; border-top: 1px dashed black; }
+        @media print {
+            body { margin: 0; }
+        }
+    </style>
+</head>
+<!-- El 'onload' ya no es necesario aquí -->
+<body>
+    <div class="ticket-container">
+        <!-- ... (el contenido HTML del ticket no cambia) ... -->
+        <div class="header">
+            {{ nombre_colegio }}<br>
+            TICKET DE ALMUERZO
+        </div>
+        <hr>
+        <div class="info">
+            <p><strong>ID:</strong> {{ persona.id_persona }}</p>
+            <p><strong>Nombre:</strong> {{ persona.nombre_persona }}</p>
+            <p><strong>Dpto:</strong> {{ persona.dpto_ref.nombre_dpto }}</p>
+            <p><strong>Control:</strong> {{ registro.tipo_control_ref.nombre_control }}</p>
+            <p><strong>Fecha:</strong> {{ fecha_hora }}</p>
+        </div>
+        <div class="qr-code">
+            <img src="{{ qr_code }}" alt="Código QR">
+        </div>
+    </div>
+
+    <!-- === LA MAGIA ESTÁ AQUÍ === -->
+    <script type="text/javascript">
+        // Espera a que el contenido esté completamente cargado
+        window.onload = function() {
+            // Lanza el diálogo de impresión
+            window.print();
+            
+            // Después de un breve retraso, cierra la ventana
+            // El retraso da tiempo al navegador para enviar el trabajo a la cola de impresión
+            setTimeout(function() {
+                window.close();
+            }, 500); // 500 milisegundos de espera
+        };
+    </script>
+</body>
+</html>

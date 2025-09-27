@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1><i class="fas fa-tools me-2"></i>Configuración General</h1>
+
+<div class="card shadow-sm mt-4">
+    <div class="card-body">
+        <!-- Añadir enctype para permitir la subida de archivos -->
+        <form method="POST" enctype="multipart/form-data">
+            
+            <h5 class="card-title">Identidad del Colegio</h5>
+            <div class="mb-3">
+                <label for="nombre_colegio" class="form-label">Nombre del Colegio</label>
+                <input type="text" class="form-control" id="nombre_colegio" name="nombre_colegio" value="{{ settings['NOMBRE_COLEGIO'] }}">
+            </div>
+
+            <div class="mb-3">
+                <label for="logo_file" class="form-label">Logo Actual del Colegio</label>
+                <div class="d-flex align-items-center">
+                    <img src="{{ url_for('static', filename='logos/' + settings['LOGO_FILENAME']) }}" alt="Logo Actual" class="img-thumbnail me-3" style="max-height: 80px;">
+                    <div>
+                        <small class="text-muted">Sube un nuevo logo para reemplazar el actual (formato .png, .jpg, .svg).</small>
+                        <input class="form-control form-control-sm mt-1" type="file" id="logo_file" name="logo_file" accept=".png, .jpg, .jpeg, .svg">
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+
+            <h5 class="card-title">Opciones de Impresión</h5>
+            <p class="card-text text-muted">Controla el comportamiento de la impresión de tickets en el sistema.</p>
+            
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" role="switch" id="imprime_tickets" name="imprime_tickets" 
+                       {% if settings.get('IMPRIME_TICKETS') == 'True' %}checked{% endif %}>
+                <label class="form-check-label" for="imprime_tickets">Habilitar impresión automática de tickets al registrar</label>
+            </div>
+
+            <hr>
+
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Guardar Cambios</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

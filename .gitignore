@@ -1,0 +1,16 @@
+# Entorno virtual
+.venv/
+
+# Archivos de caché de Python
+__pycache__/
+*.pyc
+
+# Carpeta de instancia y base de datos local
+instance/
+*.db
+
+# Archivos de entorno (¡MUY IMPORTANTE!)
+.env
+
+# Carpeta de backups
+backups/

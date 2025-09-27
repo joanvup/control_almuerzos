@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-file-import me-2"></i>Importar {{ modelo.replace('_', ' ').title() }} desde CSV</h1>
+    <a href="{{ url_for('main.list_' + modelo) }}" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i> Volver al Listado</a>
+</div>
+
+<!-- === INICIO DEL NUEVO BLOQUE DE ERRORES === -->
+{% if errors %}
+<div class="alert alert-danger">
+    <h5 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Se encontraron errores en el archivo</h5>
+    <p>La importación ha sido cancelada. Por favor, corrige los siguientes problemas en tu archivo CSV y vuelve a intentarlo:</p>
+    <hr>
+    <ul class="mb-0" style="max-height: 300px; overflow-y: auto;">
+        {% for error in errors %}
+            <li>{{ error }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+<!-- === FIN DEL NUEVO BLOQUE DE ERRORES === -->
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Subir Archivo CSV</h5>
+                <form method="POST" enctype="multipart/form-data" action="{{ url_for('main.importar_csv', modelo=modelo) }}"></form>
+                    <div class="mb-3">
+                        <label for="csv_file" class="form-label">Selecciona el archivo .csv para importar.</label>
+                        <input class="form-control" type="file" id="csv_file" name="csv_file" accept=".csv" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-upload me-1"></i> Importar Datos</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card bg-light border">
+            <div class="card-body">
+                <h5 class="card-title">Instrucciones</h5>
+                <p>Para asegurar una importación exitosa, por favor sigue estos pasos:</p>
+                <ol>
+                    <li>
+                        Descarga la plantilla oficial. Esto garantiza que tienes las columnas correctas en el orden correcto.
+                        <div class="d-grid gap-2 mt-2">
+                             <a href="{{ url_for('main.download_template', modelo=modelo) }}" class="btn btn-sm btn-success">
+                                <i class="fas fa-file-download me-1"></i> Descargar Plantilla para {{ modelo.capitalize() }}
+                            </a>
+                        </div>
+                    </li>
+                    <li class="mt-2">Abre el archivo con un editor de hojas de cálculo (Excel, Google Sheets, etc.).</li>
+                    <li>Rellena los datos sin modificar los nombres de las columnas (la primera fila).</li>
+                    <li>Guarda el archivo en formato <strong>CSV (delimitado por comas)</strong>.</li>
+                    <li>Sube el archivo usando el formulario de esta página.</li>
+                </ol>
+                {% if modelo == 'personas' %}
+                <div class="alert alert-info mt-3" role="alert">
+                    <strong>Importante para Personas:</strong> Los valores en las columnas `nombre_dpto`, `nombre_tipopersona` y `nombre_control` deben coincidir <strong>exactamente</strong> con los nombres ya creados en el sistema.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

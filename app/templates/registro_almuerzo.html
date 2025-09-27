@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block scripts %}
+{{ super() }} <!-- Importante para no sobrescribir el script de la cámara -->
+<script>
+    // Pasar el rol del usuario a JavaScript de forma segura
+    const IS_ADMIN = {{ 'true' if current_user.rol.nombre == 'Administrador' else 'false' }};
+</script>
+{% endblock %}
+{% block content %}
+<div class="text-center mb-4">
+    <h1 id="fecha-actual" class="display-6"></h1>
+    <h1 id="hora-actual" class="display-1 fw-bold"></h1>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-body">
+                <form id="registro-form">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                        <input type="text" id="id_persona_input" name="id_persona" class="form-control form-control-lg" placeholder="Ingrese el código y presione ENTER" autofocus autocomplete="off">
+                    </div>
+                </form>
+                <div id="mensaje-registro" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-5">
+    <h3 class="text-center mb-3"><i class="fas fa-history me-2"></i>Últimos Registros del Día</h3>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover text-center align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Hora</th>
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th>Departamento</th>
+                    <th>Tipo Control</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-registros-body">
+                {% for registro in registros %}
+                <tr>
+                    <td>{{ registro.fecha_hora_registro.strftime('%I:%M:%S %p') }}</td>
+                    <td>{{ registro.persona_ref.id_persona }}</td>
+                    <td>{{ registro.persona_ref.nombre_persona }}</td>
+                    <td>{{ registro.persona_ref.dpto_ref.nombre_dpto }}</td>
+                    <td>{{ registro.tipo_control_ref.nombre_control }}</td>
+                    <td>
+                        <a href="{{ url_for('main.imprimir_ticket', id_registro=registro.id_registro) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-print"></i> Reimprimir
+                        </a>
+                        <!-- === CONTENIDO NUEVO: BOTÓN DE ELIMINAR === -->
+                        {% if current_user.rol.nombre == 'Administrador' %}
+                        <form action="{{ url_for('main.delete_registro', id_registro=registro.id_registro) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este registro? Es una acción irreversible.');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar Registro">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                        <!-- === FIN DE CONTENIDO NUEVO === -->
+                    </td>
+                </tr>
+                {% else %}
+                <tr id="no-registros-row">
+                    <td colspan="6" class="text-muted">Aún no hay registros hoy.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

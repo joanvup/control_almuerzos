@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1><i class="fas fa-database me-2"></i>Backup y Restauración de Base de Datos</h1>
+
+<!-- Card para Realizar Copias de Seguridad -->
+<div class="card shadow-sm mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Realizar Copia de Seguridad</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Guardar en el Servidor</h6>
+                <p class="text-muted">Crea una copia de la base de datos y la almacena en el servidor para una futura restauración.</p>
+                <form action="{{ url_for('main.backup_to_server') }}" method="POST">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-server me-1"></i> Crear Backup en Servidor</button>
+                </form>
+            </div>
+            <div class="col-md-6 border-start">
+                <h6>Descargar a PC Local</h6>
+                <p class="text-muted">Genera una copia de la base de datos y la descarga directamente a tu computadora.</p>
+                <a href="{{ url_for('main.backup_download') }}" class="btn btn-success"><i class="fas fa-download me-1"></i> Descargar Backup</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Card para Restaurar Copias de Seguridad -->
+<div class="card shadow-sm mt-5">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Restaurar Copia de Seguridad</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-danger" role="alert">
+            <strong>¡ADVERTENCIA!</strong> Restaurar una copia de seguridad es una acción destructiva. <strong>TODOS los datos actuales serán eliminados y reemplazados</strong> por los del archivo de backup. Esta acción no se puede deshacer. Después de restaurar, <strong>debe reiniciar la aplicación</strong>.
+        </div>
+        <div class="row mt-4">
+            <!-- Restaurar desde Archivo Local -->
+            <div class="col-md-6">
+                <h6>Restaurar desde Archivo Local (.db)</h6>
+                <form action="{{ url_for('main.restore_from_upload') }}" method="POST" enctype="multipart/form-data" 
+                      onsubmit="return confirm('Esto reemplazará TODOS los datos actuales con el contenido del archivo que subas. ¿Estás absolutamente seguro?');">
+                    <div class="input-group">
+                        <input type="file" class="form-control" name="backup_file" accept=".db" required>
+                        <button class="btn btn-danger" type="submit"><i class="fas fa-upload me-1"></i> Restaurar desde PC</button>
+                    </div>
+                </form>
+            </div>
+            <!-- Restaurar desde Servidor -->
+            <div class="col-md-6 border-start">
+                <h6>Restaurar desde Servidor</h6>
+                {% if server_backups %}
+                    <form action="{{ url_for('main.restore_from_server') }}" method="POST"
+                          onsubmit="return confirm('Esto reemplazará TODOS los datos actuales con el contenido del archivo seleccionado. ¿Estás absolutamente seguro?');">
+                        <div class="input-group">
+                            <select class="form-select" name="backup_filename" required>
+                                <option value="" selected disabled>-- Selecciona un backup --</option>
+                                {% for backup in server_backups %}
+                                    <option value="{{ backup }}">{{ backup }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn btn-danger" type="submit"><i class="fas fa-history me-1"></i> Restaurar desde Servidor</button>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="alert alert-secondary">No hay copias de seguridad disponibles en el servidor.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

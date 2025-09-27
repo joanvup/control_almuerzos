@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-user-tag me-2"></i>Gestión de Tipos de Persona</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tipoPersonaModal" id="btn-nuevo-tipopersona">
+        <i class="fas fa-plus me-1"></i> Nuevo Tipo de Persona
+    </button>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre del Tipo de Persona</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.id_tipopersona }}</td>
+                    <td>{{ item.nombre_tipopersona }}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-primary edit-btn" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#tipoPersonaModal"
+                                data-id="{{ item.id_tipopersona }}"
+                                data-nombre="{{ item.nombre_tipopersona }}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <form action="{{ url_for('main.delete_tipos_persona', item_id=item.id_tipopersona) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este tipo de persona?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal para Tipos de Persona -->
+<div class="modal fade" id="tipoPersonaModal" tabindex="-1" aria-labelledby="tipoPersonaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="tipoPersonaForm" method="POST" action="{{ url_for('main.save_tipos_persona') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tipoPersonaModalLabel">Tipo de Persona</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- === CAMBIO CLAVE: Usar 'form' y añadir hidden_tag() === -->
+                    {{ form.hidden_tag() }}
+                    {{ form.id_tipopersona(id="form-id-tipopersona") }}
+                    <div class="mb-3">
+                        {{ form.nombre_tipopersona.label(class="form-label") }}
+                        {{ form.nombre_tipopersona(class="form-control", id="form-nombre-tipopersona") }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

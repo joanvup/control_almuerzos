@@ -1,0 +1,15 @@
+/* Estilo para el reloj en la página de registro */
+#hora-actual {
+    font-family: 'Courier New', Courier, monospace;
+    color: #343a40; /* Dark gray */
+}
+
+/* Evita que la foto de perfil se deforme */
+.table img.rounded-circle {
+    object-fit: cover;
+}
+
+/* Estilos para el formulario de persona */
+#webcam, #canvas, #foto-preview {
+    border-radius: 0.25rem;
+}

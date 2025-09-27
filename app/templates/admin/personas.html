@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-users me-2"></i>Gestión de Personas</h1>
+    <div> <!-- Envolver los botones en un div para agruparlos -->
+        <a href="{{ url_for('main.importar_csv', modelo='personas') }}" class="btn btn-success">
+            <i class="fas fa-file-import me-1"></i> Importar CSV
+        </a>
+        <a href="{{ url_for('main.nueva_persona') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> Nueva Persona
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Foto</th>
+                        <th>Código/ID</th>
+                        <th>Nombre</th>
+                        <th>Tipo Persona</th>
+                        <th>Departamento</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for persona in personas %}
+                    <tr>
+                        <td>
+                            <img src="{{ url_for('static', filename='uploads/' + persona.foto) }}" alt="Foto" class="rounded-circle" width="50" height="50">
+                        </td>
+                        <td>{{ persona.id_persona }}</td>
+                        <td>{{ persona.nombre_persona }}</td>
+                        <td>{{ persona.tipo_persona_ref.nombre_tipopersona }}</td>
+                        <td>{{ persona.dpto_ref.nombre_dpto }}</td>
+                        <td class="text-end">
+                            <a href="{{ url_for('main.editar_persona', id_persona=persona.id_persona) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+                            <form action="{{ url_for('main.delete_persona', id_persona=persona.id_persona) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de que quieres eliminar a esta persona?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

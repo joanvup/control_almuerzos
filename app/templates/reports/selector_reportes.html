@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1><i class="fas fa-file-alt me-2"></i>Generador de Reportes</h1>
+
+<div class="card shadow-sm mt-4">
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="tipo_reporte" class="form-label">Tipo de Reporte</label>
+                    <select id="tipo_reporte" name="tipo_reporte" class="form-select">
+                        <option value="general">General (Todos los registros)</option>
+                        <option value="dia">Por Día (usará solo la fecha de inicio)</option>
+                        <option value="persona">Por Persona</option>
+                        <option value="tipo_control">Por Tipo de Control</option>
+                        <option value="dpto">Por Departamento</option>
+                        <option value="tipo_persona">Por Tipo de Persona</option>
+                    </select>
+                </div>
+                <!-- Filtros específicos que se mostrarán/ocultarán -->
+                <div id="filtro-persona" class="col-md-6 mb-3 filter-group" style="display: none;">
+                    <label for="filtro_id_persona" class="form-label">Seleccione la Persona</label>
+                    <select id="filtro_id_persona" name="filtro_id" class="form-select">
+                        {% for p in personas %}<option value="{{ p.id_persona }}">{{ p.nombre_persona }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div id="filtro-tipo_control" class="col-md-6 mb-3 filter-group" style="display: none;">
+                    <label for="filtro_id_tipocontrol" class="form-label">Seleccione el Tipo de Control</label>
+                    <select id="filtro_id_tipocontrol" name="filtro_id" class="form-select">
+                        {% for tc in tipos_control %}<option value="{{ tc.id_control }}">{{ tc.nombre_control }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div id="filtro-dpto" class="col-md-6 mb-3 filter-group" style="display: none;">
+                    <label for="filtro_id_dpto" class="form-label">Seleccione el Departamento</label>
+                    <select id="filtro_id_dpto" name="filtro_id" class="form-select">
+                        {% for d in dptos %}<option value="{{ d.id_dpto }}">{{ d.nombre_dpto }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div id="filtro-tipo_persona" class="col-md-6 mb-3 filter-group" style="display: none;">
+                    <label for="filtro_id_tipopersona" class="form-label">Seleccione el Tipo de Persona</label>
+                    <select id="filtro_id_tipopersona" name="filtro_id" class="form-select">
+                        {% for tp in tipos_persona %}<option value="{{ tp.id_tipopersona }}">{{ tp.nombre_tipopersona }}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="fecha_inicio" class="form-label">Fecha de Inicio</label>
+                    <input type="date" name="fecha_inicio" id="fecha_inicio" class="form-control">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="fecha_fin" class="form-label">Fecha de Fin</label>
+                    <input type="date" name="fecha_fin" id="fecha_fin" class="form-control">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search me-1"></i> Generar Reporte</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

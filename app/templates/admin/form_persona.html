@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h3>{{ legend }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                {{ form.id_persona.label(class="form-label") }}
+                                {{ form.id_persona(class="form-control") }}
+                            </div>
+                            <div class="mb-3">
+                                {{ form.nombre_persona.label(class="form-label") }}
+                                {{ form.nombre_persona(class="form-control") }}
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.sexo.label(class="form-label") }}
+                                    {{ form.sexo(class="form-select") }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.dpto.label(class="form-label") }}
+                                    {{ form.dpto(class="form-select") }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.tipo_persona.label(class="form-label") }}
+                                    {{ form.tipo_persona(class="form-select") }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.control.label(class="form-label") }}
+                                    {{ form.control(class="form-select") }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h5 class="text-center">Foto</h5>
+                            <div class="text-center mb-3">
+                                <video id="webcam" width="250" height="187" autoplay playsinline class="border bg-secondary-subtle d-none"></video>
+                                <canvas id="canvas" width="250" height="187" class="d-none"></canvas>
+                                <img id="foto-preview" src="#" alt="Vista previa de la foto" class="border bg-secondary-subtle" style="width: 250px; height: 187px; display: none;">
+                            </div>
+                            {{ form.foto_webcam(id="foto_webcam_hidden") }}
+                            <div class="d-grid gap-2 mb-3">
+                                <button type="button" class="btn btn-sm btn-info" id="start-camera"><i class="fas fa-camera"></i> Iniciar Cámara</button>
+                                <button type="button" class="btn btn-sm btn-success d-none" id="click-photo"><i class="fas fa-camera-retro"></i> Tomar Foto</button>
+                                <button type="button" class="btn btn-sm btn-danger d-none" id="retake-photo"><i class="fas fa-times"></i> Borrar Foto</button>
+                            </div>
+                             <div class="mb-3">
+                                {{ form.foto.label(class="form-label") }}
+                                {{ form.foto(class="form-control form-control-sm") }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <div class="text-end">
+                        <a href="{{ url_for('main.list_personas') }}" class="btn btn-secondary">Cancelar</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Script para la cámara web
+const video = document.getElementById('webcam');
+const canvas = document.getElementById('canvas');
+const context = canvas.getContext('2d');
+const startCameraButton = document.getElementById('start-camera');
+const clickPhotoButton = document.getElementById('click-photo');
+const retakePhotoButton = document.getElementById('retake-photo');
+const hiddenInput = document.getElementById('foto_webcam_hidden');
+const fotoPreview = document.getElementById('foto-preview');
+
+startCameraButton.addEventListener('click', async function() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.classList.remove('d-none');
+        startCameraButton.classList.add('d-none');
+        clickPhotoButton.classList.remove('d-none');
+    } catch (err) {
+        console.error("Error al acceder a la cámara: ", err);
+        alert("No se pudo acceder a la cámara. Asegúrate de dar los permisos necesarios.");
+    }
+});
+
+clickPhotoButton.addEventListener('click', function() {
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/png');
+    hiddenInput.value = dataUrl;
+
+    video.classList.add('d-none');
+    video.srcObject.getTracks().forEach(track => track.stop()); // Apagar la cámara
+    canvas.classList.remove('d-none');
+    clickPhotoButton.classList.add('d-none');
+    retakePhotoButton.classList.remove('d-none');
+});
+
+retakePhotoButton.addEventListener('click', function() {
+    hiddenInput.value = '';
+    canvas.classList.add('d-none');
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    retakePhotoButton.classList.add('d-none');
+    startCameraButton.classList.remove('d-none');
+});
+
+// Para la previsualización de la foto cargada desde archivo
+document.querySelector('input[type="file"]').addEventListener('change', function(event) {
+    if (event.target.files && event.target.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            fotoPreview.src = e.target.result;
+            fotoPreview.style.display = 'block';
+            video.classList.add('d-none');
+            canvas.classList.add('d-none');
+             if(video.srcObject) video.srcObject.getTracks().forEach(track => track.stop());
+        }
+        reader.readAsDataURL(event.target.files[0]);
+    }
+});
+</script>
+{% endblock %}

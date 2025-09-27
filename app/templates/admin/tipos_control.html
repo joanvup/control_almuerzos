@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-tasks me-2"></i>Gestión de Tipos de Control</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tipoControlModal" id="btn-nuevo-tipocontrol">
+        <i class="fas fa-plus me-1"></i> Nuevo Tipo de Control
+    </button>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre del Tipo de Control</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.id_control }}</td>
+                    <td>{{ item.nombre_control }}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-primary edit-btn" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#tipoControlModal"
+                                data-id="{{ item.id_control }}"
+                                data-nombre="{{ item.nombre_control }}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <form action="{{ url_for('main.delete_tipo_control', item_id=item.id_control) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este tipo de control?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal para Tipos de Control -->
+<div class="modal fade" id="tipoControlModal" tabindex="-1" aria-labelledby="tipoControlModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="tipoControlForm" method="POST" action="{{ url_for('main.save_tipo_control') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tipoControlModalLabel">Tipo de Control</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- === CAMBIO CLAVE: Usar 'form' y añadir hidden_tag() === -->
+                    {{ form.hidden_tag() }}
+                    {{ form.id_control(id="form-id-control") }}
+                    <div class="mb-3">
+                        {{ form.nombre_control.label(class="form-label") }}
+                        {{ form.nombre_control(class="form-control", id="form-nombre-control") }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
