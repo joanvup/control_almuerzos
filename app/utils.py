@@ -9,8 +9,8 @@ def generate_qr_code(data_string):
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
-        border=4,
+        box_size=4,
+        border=2,
     )
     qr.add_data(data_string)
     qr.make(fit=True)

@@ -36,17 +36,17 @@
             <strong>¡ADVERTENCIA!</strong> Restaurar una copia de seguridad es una acción destructiva. <strong>TODOS los datos actuales serán eliminados y reemplazados</strong> por los del archivo de backup. Esta acción no se puede deshacer. Después de restaurar, <strong>debe reiniciar la aplicación</strong>.
         </div>
         <div class="row mt-4">
-            <!-- Restaurar desde Archivo Local -->
-            <div class="col-md-6">
-                <h6>Restaurar desde Archivo Local (.db)</h6>
+            <!-- ... -->
+            <h6>Restaurar desde Archivo Local (.sql.gz)</h6>
                 <form action="{{ url_for('main.restore_from_upload') }}" method="POST" enctype="multipart/form-data" 
-                      onsubmit="return confirm('Esto reemplazará TODOS los datos actuales con el contenido del archivo que subas. ¿Estás absolutamente seguro?');">
+                    onsubmit="return confirm('Esto reemplazará TODOS los datos actuales con el contenido del archivo que subas. ¿Estás absolutamente seguro?');">
                     <div class="input-group">
-                        <input type="file" class="form-control" name="backup_file" accept=".db" required>
+                        <!-- Asegúrate de que accept sea .sql.gz -->
+                    <input type="file" class="form-control" name="backup_file" accept=".sql.gz" required>
                         <button class="btn btn-danger" type="submit"><i class="fas fa-upload me-1"></i> Restaurar desde PC</button>
                     </div>
                 </form>
-            </div>
+            <!-- ... -->
             <!-- Restaurar desde Servidor -->
             <div class="col-md-6 border-start">
                 <h6>Restaurar desde Servidor</h6>

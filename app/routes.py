@@ -19,6 +19,7 @@ from datetime import date, datetime
 import base64
 from io import BytesIO
 from werkzeug.utils import secure_filename
+import subprocess
 
 bp = Blueprint('main', __name__)
 
@@ -728,40 +729,65 @@ def settings():
 
 # app/routes.py (añadir al final del archivo)
 
-# --- Rutas de Backup y Restauración ---
+# app/routes.py
+
+# --- Rutas de Backup y Restauración para MySQL (Reconstruido) ---
 
 @bp.route('/admin/backup_restore', methods=['GET'])
 @login_required
 @admin_required
 def backup_restore():
     """Muestra la página de gestión de copias de seguridad."""
-    # Escanear la carpeta de backups para encontrar archivos existentes
     backup_folder = current_app.config['BACKUP_FOLDER']
     if not os.path.exists(backup_folder):
         os.makedirs(backup_folder)
     
+    # Buscar archivos .sql.gz
     server_backups = sorted(
-        [f for f in os.listdir(backup_folder) if f.endswith('.db')],
+        [f for f in os.listdir(backup_folder) if f.endswith('.sql.gz')],
         reverse=True
     )
     return render_template('admin/backup_restore.html', title='Backup y Restauración', server_backups=server_backups)
+
+
+def _run_mysql_command(command):
+    """Función auxiliar para ejecutar comandos de shell y manejar errores."""
+    db_config = current_app.config.get('DB_CONFIG', {})
+    safe_command = command.replace(db_config.get('password', 'PASSWORD'), '********')
+    
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    stdout, stderr = process.communicate()
+
+    if process.returncode != 0:
+        raise RuntimeError(f"Error ejecutando comando: {safe_command}\nError: {stderr.strip()}")
+    return stdout
 
 
 @bp.route('/admin/backup/server', methods=['POST'])
 @login_required
 @admin_required
 def backup_to_server():
-    """Crea una copia de seguridad y la guarda en la carpeta de backups del servidor."""
+    """Crea un backup de la base de datos MySQL y la guarda en el servidor."""
+    db_config = current_app.config.get('DB_CONFIG')
+    if not db_config:
+        flash('La configuración de la base de datos no es válida para esta operación.', 'danger')
+        return redirect(url_for('main.backup_restore'))
+
     try:
         backup_folder = current_app.config['BACKUP_FOLDER']
-        db_path = current_app.config['DB_PATH']
-        
         timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        backup_filename = f'backup_{timestamp}.db'
+        backup_filename = f"backup_{timestamp}.sql.gz"
         backup_path = os.path.join(backup_folder, backup_filename)
+
+        command = (
+            f"mysqldump --user={db_config['user']} --password='{db_config['password']}' "
+            f"--host={db_config['host']} --single-transaction --routines --triggers "
+            f"{db_config['database']} | gzip > {backup_path}"
+        )
         
-        shutil.copy2(db_path, backup_path)
-        flash(f'Copia de seguridad "{backup_filename}" creada exitosamente en el servidor.', 'success')
+        _run_mysql_command(command)
+        flash(f'Copia de seguridad "{backup_filename}" creada exitosamente.', 'success')
+            
     except Exception as e:
         flash(f'Error al crear la copia de seguridad: {e}', 'danger')
         
@@ -772,22 +798,36 @@ def backup_to_server():
 @login_required
 @admin_required
 def backup_download():
-    """Crea una copia de seguridad y la ofrece para descargar."""
+    """Crea un backup de MySQL y lo ofrece para descargar."""
+    db_config = current_app.config.get('DB_CONFIG')
+    if not db_config:
+        flash('La configuración de la base de datos no es válida para esta operación.', 'danger')
+        return redirect(url_for('main.backup_restore'))
+
     try:
-        backup_folder = current_app.config['BACKUP_FOLDER']
-        db_path = current_app.config['DB_PATH']
-        
         timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        backup_filename = f'backup_{timestamp}.db'
-        backup_path = os.path.join(backup_folder, backup_filename)
+        backup_filename = f"backup_{timestamp}.sql.gz"
         
-        # Primero, crea la copia en el servidor
-        shutil.copy2(db_path, backup_path)
+        command = (
+            f"mysqldump --user={db_config['user']} --password='{db_config['password']}' "
+            f"--host={db_config['host']} --single-transaction --routines --triggers "
+            f"{db_config['database']} | gzip"
+        )
         
-        # Luego, la envía para descargar
-        return send_from_directory(directory=backup_folder, path=backup_filename, as_attachment=True)
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+
+        if process.returncode != 0:
+            raise RuntimeError(f"Error al generar el backup: {stderr.decode('utf-8')}")
+
+        return Response(
+            stdout,
+            mimetype="application/gzip",
+            headers={"Content-disposition": f"attachment; filename={backup_filename}"}
+        )
+        
     except Exception as e:
-        flash(f'Error al generar la descarga: {e}', 'danger')
+        flash(f'Error inesperado al generar la descarga: {e}', 'danger')
         return redirect(url_for('main.backup_restore'))
 
 
@@ -795,24 +835,38 @@ def backup_download():
 @login_required
 @admin_required
 def restore_from_upload():
-    """Restaura la base de datos desde un archivo subido."""
-    if 'backup_file' not in request.files or not request.files['backup_file'].filename:
+    """Restaura la base de datos MySQL desde un archivo .sql.gz subido."""
+    file = request.files.get('backup_file')
+    if not file or not file.filename:
         flash('No se seleccionó ningún archivo para restaurar.', 'warning')
         return redirect(url_for('main.backup_restore'))
     
-    file = request.files['backup_file']
-    if not file.filename.endswith('.db'):
-        flash('Archivo no válido. Solo se pueden restaurar archivos .db', 'danger')
+    if not file.filename.endswith('.sql.gz'):
+        flash('Archivo no válido. Solo se pueden restaurar archivos .sql.gz', 'danger')
+        return redirect(url_for('main.backup_restore'))
+
+    db_config = current_app.config.get('DB_CONFIG')
+    if not db_config:
+        flash('La configuración de la base de datos no es válida para esta operación.', 'danger')
         return redirect(url_for('main.backup_restore'))
 
     try:
-        db_path = current_app.config['DB_PATH']
-        # Sobrescribir el archivo de la base de datos actual con el archivo subido
-        file.save(db_path)
+        command = (
+            f"gunzip | mysql --user={db_config['user']} "
+            f"--password='{db_config['password']}' --host={db_config['host']} {db_config['database']}"
+        )
+        
+        process = subprocess.Popen(command, shell=True, stdin=file.stream, stderr=subprocess.PIPE, text=True)
+        _, stderr = process.communicate()
+
+        if process.returncode != 0:
+            raise RuntimeError(f"Error al restaurar: {stderr}")
+
         flash('Restauración desde archivo local completada.', 'success')
-        flash('IMPORTANTE: Debe reiniciar la aplicación para que los cambios surtan efecto.', 'warning')
+        flash('IMPORTANTE: Puede ser necesario reiniciar la aplicación para que todos los cambios surtan efecto.', 'warning')
+            
     except Exception as e:
-        flash(f'Error al restaurar desde el archivo: {e}', 'danger')
+        flash(f'Error inesperado al restaurar: {e}', 'danger')
 
     return redirect(url_for('main.backup_restore'))
 
@@ -821,28 +875,35 @@ def restore_from_upload():
 @login_required
 @admin_required
 def restore_from_server():
-    """Restaura la base de datos desde un archivo existente en el servidor."""
+    """Restaura la base de datos MySQL desde un archivo del servidor."""
     backup_filename = request.form.get('backup_filename')
     if not backup_filename:
         flash('No se seleccionó ningún archivo de backup del servidor.', 'warning')
         return redirect(url_for('main.backup_restore'))
+    
+    db_config = current_app.config.get('DB_CONFIG')
+    if not db_config:
+        flash('La configuración de la base de datos no es válida para esta operación.', 'danger')
+        return redirect(url_for('main.backup_restore'))
 
     try:
         backup_folder = current_app.config['BACKUP_FOLDER']
-        db_path = current_app.config['DB_PATH']
-        backup_path = os.path.join(backup_folder, backup_filename)
-
-        # Medida de seguridad: asegurarse de que el archivo está en la carpeta de backups
+        backup_path = os.path.join(backup_folder, secure_filename(backup_filename))
+        
         if not os.path.exists(backup_path):
-            flash('El archivo de backup seleccionado no existe.', 'danger')
-            return redirect(url_for('main.backup_restore'))
+            raise FileNotFoundError('El archivo de backup seleccionado no existe.')
 
-        # Copiar el archivo de backup sobre el archivo de la base de datos actual
-        shutil.copy2(backup_path, db_path)
+        command = (
+            f"gunzip < {backup_path} | mysql --user={db_config['user']} "
+            f"--password='{db_config['password']}' --host={db_config['host']} {db_config['database']}"
+        )
+        
+        _run_mysql_command(command)
         flash(f'Restauración desde "{backup_filename}" completada.', 'success')
-        flash('IMPORTANTE: Debe reiniciar la aplicación para que los cambios surtan efecto.', 'warning')
+        flash('IMPORTANTE: Puede ser necesario reiniciar la aplicación para que todos los cambios surtan efecto.', 'warning')
+            
     except Exception as e:
-        flash(f'Error al restaurar desde el servidor: {e}', 'danger')
+        flash(f'Error al restaurar: {e}', 'danger')
 
     return redirect(url_for('main.backup_restore'))
 
