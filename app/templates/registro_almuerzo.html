@@ -22,6 +22,17 @@
                         <input type="text" id="id_persona_input" name="id_persona" class="form-control form-control-lg" placeholder="Ingrese el código y presione ENTER" autofocus autocomplete="off">
                     </div>
                 </form>
+                <!-- === INICIO DE CÓDIGO NUEVO: FORMULARIO DE BÚSQUEDA POR NOMBRE === -->
+                <form id="search-form">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                        <input type="text" id="nombre_search_input" class="form-control form-control-lg" placeholder="O busque por nombre (mín. 3 letras)">
+                        <button class="btn btn-outline-secondary" type="submit" id="search-button">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                    </div>
+                </form>
+                <!-- === FIN DE CÓDIGO NUEVO === -->
                 <div id="mensaje-registro" class="mt-3"></div>
             </div>
         </div>
@@ -73,5 +84,22 @@
             </tbody>
         </table>
     </div>
+</div>
+<!-- === INICIO DE CÓDIGO NUEVO: MODAL PARA RESULTADOS DE BÚSQUEDA === -->
+<div class="modal fade" id="searchResultsModal" tabindex="-1" aria-labelledby="searchResultsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="searchResultsModalLabel">Resultados de la Búsqueda</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="searchResultsBody">
+        <!-- Los resultados de la búsqueda se insertarán aquí con JavaScript -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

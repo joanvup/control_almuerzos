@@ -189,4 +189,74 @@ $(document).ready(function() {
         modal.find('.modal-title').text('Editar Usuario: ' + username);
     });
 
+    // --- INICIO DE NUEVA LÓGICA: BÚSQUEDA POR NOMBRE ---
+    const searchForm = $('#search-form');
+    const searchInput = $('#nombre_search_input');
+    const searchResultsBody = $('#searchResultsBody');
+    const searchModal = new bootstrap.Modal(document.getElementById('searchResultsModal'));
+    const mainIdInput = $('#id_persona_input');
+    const mainForm = $('#registro-form');
+
+    searchForm.on('submit', function(e) {
+        e.preventDefault();
+        const searchTerm = searchInput.val().trim();
+
+        if (searchTerm.length < 3) {
+            alert('Por favor, ingrese al menos 3 letras para buscar.');
+            return;
+        }
+
+        // Mostrar un indicador de carga
+        searchResultsBody.html('<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Buscando...</p>');
+        searchModal.show();
+
+        fetch(`/buscar_persona?q=${encodeURIComponent(searchTerm)}`)
+            .then(response => response.json())
+            .then(data => {
+                searchResultsBody.empty(); // Limpiar el indicador de carga
+
+                if (data.length > 0) {
+                    const list = $('<div class="list-group"></div>');
+                    data.forEach(person => {
+                        const item = $(`
+                            <a href="#" class="list-group-item list-group-item-action search-result-item" data-id="${person.id_persona}">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">${person.nombre_persona}</h5>
+                                    <small class="text-muted">ID: ${person.id_persona}</small>
+                                </div>
+                                <p class="mb-1 text-muted">${person.dpto}</p>
+                            </a>
+                        `);
+                        list.append(item);
+                    });
+                    searchResultsBody.append(list);
+                } else {
+                    searchResultsBody.html('<p class="text-center text-muted">No se encontraron resultados para su búsqueda.</p>');
+                }
+            })
+            .catch(error => {
+                console.error('Error en la búsqueda:', error);
+                searchResultsBody.html('<p class="text-center text-danger">Ocurrió un error al realizar la búsqueda.</p>');
+            });
+    });
+
+    // Manejar el clic en un resultado de la búsqueda (usando delegación de eventos)
+    searchResultsBody.on('click', '.search-result-item', function(e) {
+        e.preventDefault();
+        const personId = $(this).data('id');
+        
+        // Poner el ID en el campo principal
+        mainIdInput.val(personId);
+        
+        // Cerrar el modal
+        searchModal.hide();
+
+        // Limpiar el campo de búsqueda
+        searchInput.val('');
+        
+        // Enviar el formulario principal para registrar el almuerzo
+        mainForm.submit();
+    });
+    // --- FIN DE NUEVA LÓGICA ---
+
 });

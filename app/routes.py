@@ -845,3 +845,35 @@ def restore_from_server():
         flash(f'Error al restaurar desde el servidor: {e}', 'danger')
 
     return redirect(url_for('main.backup_restore'))
+
+# app/routes.py
+
+# ... (tus otras rutas) ...
+
+@bp.route('/buscar_persona')
+@login_required
+def buscar_persona():
+    """Endpoint de API para buscar personas por nombre."""
+    search_term = request.args.get('q', '').strip()
+
+    # Evitar búsquedas vacías o muy cortas para no sobrecargar la BD
+    if len(search_term) < 3:
+        return jsonify([])
+
+    # Buscar personas cuyo nombre contenga el término de búsqueda (insensible a mayúsculas)
+    # Usamos ilike para compatibilidad con PostgreSQL y otros dialectos.
+    personas_encontradas = Persona.query.filter(
+        Persona.nombre_persona.ilike(f"%{search_term}%")
+    ).order_by(Persona.nombre_persona).limit(20).all()
+
+    # Formatear los resultados para la respuesta JSON
+    resultados = [
+        {
+            'id_persona': p.id_persona,
+            'nombre_persona': p.nombre_persona,
+            'dpto': p.dpto_ref.nombre_dpto
+        }
+        for p in personas_encontradas
+    ]
+
+    return jsonify(resultados)
