@@ -21,6 +21,9 @@ from io import BytesIO
 from werkzeug.utils import secure_filename
 import subprocess
 
+from openpyxl import load_workbook
+
+
 bp = Blueprint('main', __name__)
 
 # --- Decoradores de roles ---
@@ -938,3 +941,124 @@ def buscar_persona():
     ]
 
     return jsonify(resultados)
+
+# app/routes.py
+
+
+# --- Ruta para la Importación Específica de Estudiantes desde Excel ---
+
+@bp.route('/admin/importar_estudiantes_excel', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def importar_estudiantes_excel():
+    if request.method == 'POST':
+        if 'excel_file' not in request.files or not request.files['excel_file'].filename:
+            flash('No se seleccionó ningún archivo.', 'warning')
+            return redirect(request.url)
+        
+        file = request.files['excel_file']
+
+        if not file.filename.endswith(('.xlsx', '.xls')):
+            flash('Formato de archivo no válido. Por favor, sube un archivo de Excel (.xlsx).', 'danger')
+            return redirect(request.url)
+
+        try:
+            updated_count = 0
+            created_count = 0
+            errors = []
+            
+            workbook = load_workbook(file)
+            sheet = workbook.active
+
+            tipos_persona_map = {tp.nombre_tipopersona: tp for tp in TipoPersona.query.all()}
+            dptos_map = {d.nombre_dpto: d for d in Dpto.query.all()}
+            tipos_control_map = {tc.nombre_control: tc for tc in TipoControl.query.all()}
+            
+            required_keys = ['Estudiante', 'Almuerzo Regular', 'Dieta Especial', 'No Aplica']
+            if any(key not in (list(tipos_persona_map.keys()) + list(tipos_control_map.keys())) for key in required_keys if key != 'Estudiante'):
+                 errors.append("Asegúrese de que los tipos de persona/control 'Estudiante', 'Almuerzo Regular', 'Dieta Especial' y 'No Aplica' existan en la base de datos.")
+
+            if errors:
+                return render_template('admin/importar_estudiantes_excel.html', title="Actualizar Estudiantes", errors=errors)
+
+            for i, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
+                if not any(row): continue # Saltar filas completamente vacías
+                seccion, nombre_raw, grupos, id_persona, sexo_raw = row[0:5]
+
+                if not id_persona or not nombre_raw:
+                    errors.append(f"Fila {i}: Faltan el ID o el Nombre del estudiante. Se omitirá esta fila.")
+                    continue
+                
+                id_persona = str(id_persona).strip()
+                
+                try:
+                    apellido, nombre = [part.strip() for part in nombre_raw.split(',', 1)]
+                    nombre_formateado = f"{nombre} {apellido}"
+                except (ValueError, TypeError):
+                    nombre_formateado = str(nombre_raw).strip() if nombre_raw else ''
+                
+                sexo = 'M' if sexo_raw and 'MASCULINO' in str(sexo_raw).upper() else 'F'
+                
+                seccion_obj = dptos_map.get(str(seccion).strip()) if seccion else None
+                if not seccion_obj:
+                    errors.append(f"Fila {i} (ID: {id_persona}): El departamento '{seccion}' no existe o está vacío. Se omitirá esta fila.")
+                    continue
+
+                # --- LÓGICA DE BÚSQUEDA DE SUBCADENA (CONFIRMADA) ---
+                grupos_str = str(grupos).upper() if grupos else ""
+                if 'ALMUERZO NORMAL' in grupos_str:
+                    control_obj = tipos_control_map.get('Almuerzo Regular')
+                elif 'ALMUERZO ESPECIAL' in grupos_str:
+                    control_obj = tipos_control_map.get('Dieta Especial')
+                else:
+                    control_obj = tipos_control_map.get('No Aplica')
+                # --- FIN DE LA LÓGICA ---
+                
+                if not control_obj:
+                    errors.append(f"Fila {i} (ID: {id_persona}): No se pudo asignar un tipo de control válido. Verifique que los tipos de control base existan.")
+                    continue
+                
+                persona = Persona.query.get(id_persona)
+                
+                if persona:
+                    persona.nombre_persona = nombre_formateado
+                    persona.sexo = sexo
+                    persona.dpto_id = seccion_obj.id_dpto
+                    persona.control_id = control_obj.id_control
+                    persona.tipo_persona_id = tipos_persona_map['Estudiante'].id_tipopersona
+                    updated_count += 1
+                else:
+                    new_person = Persona(
+                        id_persona=id_persona,
+                        nombre_persona=nombre_formateado,
+                        sexo=sexo,
+                        dpto_id=seccion_obj.id_dpto,
+                        control_id = control_obj.id_control,
+                        tipo_persona_id = tipos_persona_map['Estudiante'].id_tipopersona
+                    )
+                    db.session.add(new_person)
+                    created_count += 1
+            
+            if errors:
+                db.session.rollback()
+                flash("La importación se canceló debido a errores. Revisa la lista de problemas.", 'danger')
+                return render_template('admin/importar_estudiantes_excel.html', title="Actualizar Estudiantes", errors=errors)
+            
+            db.session.commit()
+            success_message = []
+            if updated_count > 0: success_message.append(f"{updated_count} estudiantes actualizados")
+            if created_count > 0: success_message.append(f"{created_count} estudiantes nuevos creados")
+            
+            if not success_message:
+                flash('El archivo no contenía estudiantes para procesar.', 'warning')
+            else:
+                flash(f"Proceso completado: {', '.join(success_message)}.", 'success')
+
+            return redirect(url_for('main.list_personas'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Ocurrió un error inesperado al procesar el archivo: {e}', 'danger')
+            return redirect(request.url)
+
+    return render_template('admin/importar_estudiantes_excel.html', title="Actualizar Estudiantes")

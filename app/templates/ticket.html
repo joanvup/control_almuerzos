@@ -4,10 +4,16 @@
     <meta charset="UTF-8">
     <title>Ticket de Almuerzo</title>
     <style>
-        /* Usar una fuente monoespaciada para un look de ticket clásico y compacto */
         @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
         
-        /* Resetear márgenes y padding */
+        /* === INICIO DE LA SOLUCIÓN: Regla @page para controlar márgenes de impresión === */
+        @page {
+            /* Establece todos los márgenes de la página impresa a cero */
+            margin: 0;
+            size: 80mm auto; /* Opcional: define el tamaño del papel */
+        }
+        /* === FIN DE LA SOLUCIÓN === */
+        
         * {
             margin: 0;
             padding: 0;
@@ -15,44 +21,40 @@
         }
 
         body {
-            font-family: 'Roboto Mono', monospace;
-            /* Ancho estándar de 80mm, pero podrías reducirlo a 58mm si tu impresora es más pequeña */
+            font-family: 'Roboto+Mono', monospace;
             width: 80mm; 
-            font-size: 9pt; /* Reducimos el tamaño de fuente base */
+            font-size: 9pt;
             color: #000;
+            /* Añadimos un pequeño padding interno para que el contenido no pegue a los bordes */
+            padding: 2mm; 
         }
         .ticket-container {
-            /* Eliminamos el padding extra para aprovechar todo el ancho */
-            padding: 2mm 1mm; 
             text-align: center;
         }
         .header {
-            font-size: 10pt; /* Ligeramente más grande */
-            font-weight: 700; /* Bold */
-            margin-bottom: 5px; /* Menos espacio inferior */
+            font-size: 10pt;
+            font-weight: 700;
+            margin-bottom: 5px;
         }
         .info {
             text-align: left;
-            margin-bottom: 5px; /* Menos espacio inferior */
+            margin-bottom: 5px;
         }
-        /* Usar una tabla para alinear perfectamente los datos */
         .info-table {
             width: 100%;
-            font-size: 8.5pt; /* Aún más pequeño para los datos */
+            font-size: 8.5pt;
         }
         .info-table td {
-            padding: 1px 0; /* Espaciado vertical mínimo */
+            padding: 1px 0;
         }
         .info-table td.label {
-            font-weight: 700; /* Bold para las etiquetas */
-            width: 30%; /* Ancho fijo para las etiquetas */
+            font-weight: 700;
+            width: 30%;
         }
         .qr-code {
-            margin-top: 5px; /* Menos espacio superior */
+            margin-top: 5px;
         }
         .qr-code img {
-            /* El tamaño del QR ahora lo controla principalmente 'box_size' en el backend */
-            /* pero podemos darle un ancho máximo por si acaso */
             max-width: 60%; 
             height: auto;
             display: block;
@@ -61,46 +63,34 @@
         hr {
             border: 0;
             border-top: 1px dashed black;
-            margin: 4px 0; /* Menos espaciado vertical */
+            margin: 4px 0;
         }
-        /* Media query para la impresión */
+        
+        /* Media query para impresión (mantenemos por si acaso) */
         @media print {
             body {
-                margin: 0;
+                /* Nos aseguramos de que el body no añada márgenes propios en el modo impresión */
+                margin: 0 !important;
+                padding: 2mm !important; /* Mantenemos el padding interno */
             }
         }
     </style>
 </head>
 <body onload="window.print(); setTimeout(function() { window.close(); }, 500);">
     <div class="ticket-container">
+        <!-- El contenido HTML del ticket no cambia -->
         <div class="header">
             {{ nombre_colegio }}<br>
             TICKET DE ALMUERZO
         </div>
         <hr>
         <div class="info">
-            <!-- Usamos una tabla para un diseño más compacto y alineado -->
             <table class="info-table">
-                <tr>
-                    <td class="label">ID:</td>
-                    <td>{{ persona.id_persona }}</td>
-                </tr>
-                <tr>
-                    <td class="label">Nombre:</td>
-                    <td>{{ persona.nombre_persona }}</td>
-                </tr>
-                <tr>
-                    <td class="label">Dpto:</td>
-                    <td>{{ persona.dpto_ref.nombre_dpto }}</td>
-                </tr>
-                <tr>
-                    <td class="label">Control:</td>
-                    <td>{{ registro.tipo_control_ref.nombre_control }}</td>
-                </tr>
-                 <tr>
-                    <td class="label">Fecha:</td>
-                    <td>{{ fecha_hora }}</td>
-                </tr>
+                <tr><td class="label">ID:</td><td>{{ persona.id_persona }}</td></tr>
+                <tr><td class="label">Nombre:</td><td>{{ persona.nombre_persona }}</td></tr>
+                <tr><td class="label">Dpto:</td><td>{{ persona.dpto_ref.nombre_dpto }}</td></tr>
+                <tr><td class="label">Control:</td><td>{{ registro.tipo_control_ref.nombre_control }}</td></tr>
+                <tr><td class="label">Fecha:</td><td>{{ fecha_hora }}</td></tr>
             </table>
         </div>
         <div class="qr-code">

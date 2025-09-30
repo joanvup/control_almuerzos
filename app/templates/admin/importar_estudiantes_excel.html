@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-file-excel me-2"></i>Actualizar Estudiantes desde Excel</h1>
+    <a href="{{ url_for('main.list_personas') }}" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i> Volver al Listado</a>
+</div>
+
+{% if errors %}
+<div class="alert alert-danger">
+    <h5 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Se encontraron errores en el archivo</h5>
+    <p>La importación ha sido cancelada. Por favor, corrige los siguientes problemas:</p>
+    <hr>
+    <ul class="mb-0" style="max-height: 300px; overflow-y: auto;">
+        {% for error in errors %}
+            <li>{{ error }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Subir Archivo de Excel (.xlsx)</h5>
+                <form method="POST" enctype="multipart/form-data" action="{{ url_for('main.importar_estudiantes_excel') }}">
+                    <div class="mb-3">
+                        <label for="excel_file" class="form-label">Selecciona el archivo `estudiantes_activos.xlsx`.</label>
+                        <input class="form-control" type="file" id="excel_file" name="excel_file" accept=".xlsx, .xls" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-upload me-1"></i> Procesar Archivo</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card bg-light border">
+            <div class="card-body">
+                <h5 class="card-title">Requisitos del Archivo</h5>
+                <p>El sistema procesará el archivo de Excel esperando la siguiente estructura de columnas:</p>
+                <ul>
+                    <li><b>Columna A:</b> Sección (Debe coincidir con un Departamento existente)</li>
+                    <li><b>Columna B:</b> Estudiante (Formato: Apellidos, Nombres)</li>
+                    <li><b>Columna C:</b> Grupos (Contendrá 'ALMUERZO NORMAL' o 'ESPECIAL')</li>
+                    <li><b>Columna D:</b> Id (El código del estudiante)</li>
+                    <li><b>Columna E:</b> Sexo</li>
+                </ul>
+                <div class="alert alert-info mt-3" role="alert">
+                    <strong>Nota:</strong> El sistema actualizará los estudiantes existentes basándose en su 'Id'. Si un 'Id' del archivo no se encuentra en la base de datos, se creará un nuevo estudiante.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
