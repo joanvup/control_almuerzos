@@ -41,3 +41,11 @@ class Config:
     DB_PATH = None
     if SQLALCHEMY_DATABASE_URI and 'sqlite' in SQLALCHEMY_DATABASE_URI:
         DB_PATH = SQLALCHEMY_DATABASE_URI.replace('sqlite:///', '')
+
+     # --- INICIO DE LA NUEVA SECCIÓN DE CONFIGURACIÓN ---
+    # Rutas a los binarios del sistema para las operaciones de backup/restauración
+    MYSQLDUMP_PATH = os.environ.get('MYSQLDUMP_PATH') or '/usr/bin/mysqldump'
+    MYSQL_PATH = os.environ.get('MYSQL_PATH') or '/usr/bin/mysql'
+    GZIP_PATH = os.environ.get('GZIP_PATH') or '/bin/gzip'
+    GUNZIP_PATH = os.environ.get('GUNZIP_PATH') or '/bin/gunzip'
+    # --- FIN DE LA NUEVA SECCIÓN ---

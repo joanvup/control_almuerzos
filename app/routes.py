@@ -791,10 +791,14 @@ def backup_to_server():
         backup_filename = f"backup_{timestamp}.sql.gz"
         backup_path = os.path.join(backup_folder, backup_filename)
 
+        # Leer las rutas desde la configuración de la app
+        mysqldump_cmd = current_app.config['MYSQLDUMP_PATH']
+        gzip_cmd = current_app.config['GZIP_PATH']
+        
         command = (
-            f"mysqldump --user={db_config['user']} --password='{db_config['password']}' "
+            f"{mysqldump_cmd} --user={db_config['user']} --password='{db_config['password']}' "
             f"--host={db_config['host']} --single-transaction --routines --triggers "
-            f"{db_config['database']} | gzip > {backup_path}"
+            f"{db_config['database']} | {gzip_cmd} > {backup_path}"
         )
         
         _run_mysql_command(command)
@@ -820,10 +824,13 @@ def backup_download():
         timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         backup_filename = f"backup_{timestamp}.sql.gz"
         
+        mysqldump_cmd = current_app.config['MYSQLDUMP_PATH']
+        gzip_cmd = current_app.config['GZIP_PATH']
+
         command = (
-            f"mysqldump --user={db_config['user']} --password='{db_config['password']}' "
+            f"{mysqldump_cmd} --user={db_config['user']} --password='{db_config['password']}' "
             f"--host={db_config['host']} --single-transaction --routines --triggers "
-            f"{db_config['database']} | gzip"
+            f"{db_config['database']} | {gzip_cmd}"
         )
         
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -863,8 +870,11 @@ def restore_from_upload():
         return redirect(url_for('main.backup_restore'))
 
     try:
+        gunzip_cmd = current_app.config['GUNZIP_PATH']
+        mysql_cmd = current_app.config['MYSQL_PATH']
+
         command = (
-            f"gunzip | mysql --user={db_config['user']} "
+            f"{gunzip_cmd} | {mysql_cmd} --user={db_config['user']} "
             f"--password='{db_config['password']}' --host={db_config['host']} {db_config['database']}"
         )
         
@@ -905,8 +915,11 @@ def restore_from_server():
         if not os.path.exists(backup_path):
             raise FileNotFoundError('El archivo de backup seleccionado no existe.')
 
+        gunzip_cmd = current_app.config['GUNZIP_PATH']
+        mysql_cmd = current_app.config['MYSQL_PATH']
+
         command = (
-            f"gunzip < {backup_path} | mysql --user={db_config['user']} "
+            f"{gunzip_cmd} < {backup_path} | {mysql_cmd} --user={db_config['user']} "
             f"--password='{db_config['password']}' --host={db_config['host']} {db_config['database']}"
         )
         
