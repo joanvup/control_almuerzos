@@ -56,7 +56,7 @@
             <tbody id="tabla-registros-body">
                 {% for registro in registros %}
                 <tr>
-                    <td>{{ registro.fecha_hora_registro.strftime('%I:%M:%S %p') }}</td>
+                    <td>{{ registro.fecha_hora_registro | localtime_timeonly }}</td>
                     <td>{{ registro.persona_ref.id_persona }}</td>
                     <td>{{ registro.persona_ref.nombre_persona }}</td>
                     <td>{{ registro.persona_ref.dpto_ref.nombre_dpto }}</td>

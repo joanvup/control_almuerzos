@@ -24,7 +24,7 @@
                 <tbody>
                     {% for registro in resultados %}
                     <tr>
-                        <td>{{ registro.fecha_hora_registro.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>{{ registro.fecha_hora_registro | localtime }}</td>
                         <td>{{ registro.persona_ref.id_persona }}</td>
                         <td>{{ registro.persona_ref.nombre_persona }}</td>
                         <td>{{ registro.persona_ref.dpto_ref.nombre_dpto }}</td>

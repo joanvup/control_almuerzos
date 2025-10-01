@@ -3,6 +3,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1><i class="fas fa-users-cog me-2"></i>Gestión de Usuarios del Sistema</h1>
+    <!-- Puedes mantener o quitar el botón de "Nuevo Usuario" según prefieras -->
     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#usuarioModal" id="btn-nuevo-usuario">
         <i class="fas fa-plus me-1"></i> Nuevo Usuario
     </button>
@@ -31,14 +32,16 @@
                             </span>
                         </td>
                         <td class="text-end">
-                            <button class="btn btn-sm btn-outline-primary edit-btn-usuario" 
+                            <!-- === BOTÓN DE CAMBIO DE CONTRASEÑA === -->
+                            <button class="btn btn-sm btn-outline-warning change-password-btn" 
                                     data-bs-toggle="modal" 
-                                    data-bs-target="#usuarioModal"
-                                    data-id="{{ user.id }}"
-                                    data-username="{{ user.username }}"
-                                    data-rol-id="{{ user.rol.id }}">
-                                <i class="fas fa-edit"></i>
+                                    data-bs-target="#changePasswordModal"
+                                    data-user-id="{{ user.id }}"
+                                    data-username="{{ user.username }}">
+                                <i class="fas fa-key"></i> Cambiar Contraseña
                             </button>
+                            <!-- === FIN DE BOTÓN === -->
+
                             <form action="{{ url_for('main.delete_usuario', user_id=user.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de que quieres eliminar a este usuario?');">
                                 <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
                             </form>
@@ -51,43 +54,24 @@
     </div>
 </div>
 
-<!-- Modal para Usuarios -->
+<!-- Modal para CREAR NUEVOS Usuarios (se mantiene igual) -->
 <div class="modal fade" id="usuarioModal" tabindex="-1" aria-labelledby="usuarioModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <form id="usuarioForm" method="POST" action="{{ url_for('main.save_usuario') }}">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="usuarioModalLabel">Usuario</h5>
+                    <h5 class="modal-title" id="usuarioModalLabel">Nuevo Usuario</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     {{ form.hidden_tag() }}
-                    {{ form.id(id="form-id-usuario") }} <!-- Campo oculto para el ID -->
-                    
-                    <div class="mb-3">
-                        {{ form.username.label(class="form-label") }}
-                        {{ form.username(class="form-control", id="form-username") }}
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.rol.label(class="form-label") }}
-                        {{ form.rol(class="form-select", id="form-rol") }}
-                    </div>
-                    
+                    {{ form.id(id="form-id-usuario") }}
+                    <div class="mb-3">{{ form.username.label(class="form-label") }}{{ form.username(class="form-control", id="form-username") }}</div>
+                    <div class="mb-3">{{ form.rol.label(class="form-label") }}{{ form.rol(class="form-select", id="form-rol") }}</div>
                     <hr>
-                    <p class="text-muted">Gestión de Contraseña</p>
-                    
-                    <div class="mb-3">
-                        {{ form.password.label(class="form-label") }}
-                        {{ form.password(class="form-control", id="form-password") }}
-                        <small class="form-text text-muted">Dejar en blanco para no cambiar la contraseña al editar.</small>
-                    </div>
-
-                    <div class="mb-3">
-                        {{ form.confirm_password.label(class="form-label") }}
-                        {{ form.confirm_password(class="form-control", id="form-confirm-password") }}
-                    </div>
-
+                    <p class="text-muted">Contraseña (mínimo 6 caracteres)</p>
+                    <div class="mb-3">{{ form.password.label(class="form-label") }}{{ form.password(class="form-control", id="form-password", required=True) }}</div>
+                    <div class="mb-3">{{ form.confirm_password.label(class="form-label") }}{{ form.confirm_password(class="form-control", id="form-confirm-password", required=True) }}</div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
@@ -97,4 +81,62 @@
         </div>
     </div>
 </div>
+
+<!-- === NUEVO MODAL PARA CAMBIAR CONTRASEÑA === -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="changePasswordForm" method="POST" action="{{ url_for('main.change_password') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="changePasswordModalLabel">Cambiar Contraseña</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="user_id" id="change-pwd-user-id">
+                    <p>Cambiando contraseña para el usuario: <strong id="change-pwd-username"></strong></p>
+                    <div class="mb-3">
+                        <label for="new_password" class="form-label">Nueva Contraseña</label>
+                        <input type="password" class="form-control" name="new_password" id="new_password" minlength="6" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">Confirmar Nueva Contraseña</label>
+                        <input type="password" class="form-control" name="confirm_password" id="confirm_password" minlength="6" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Nueva Contraseña</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function() {
+    // Lógica para el modal de Cambiar Contraseña
+    $('.change-password-btn').on('click', function() {
+        const userId = $(this).data('user-id');
+        const username = $(this).data('username');
+
+        // Llenar los campos del modal
+        $('#change-pwd-user-id').val(userId);
+        $('#change-pwd-username').text(username);
+
+        // Limpiar campos de contraseña por si se abrió antes
+        $('#new_password').val('');
+        $('#confirm_password').val('');
+    });
+
+    // Lógica para el modal de Nuevo Usuario (simplificada)
+    $('#btn-nuevo-usuario').on('click', function() {
+        $('#usuarioForm')[0].reset();
+        $('#form-id-usuario').val('');
+        $('#usuarioModalLabel').text('Nuevo Usuario');
+    });
+});
+</script>
 {% endblock %}

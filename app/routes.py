@@ -20,6 +20,7 @@ import base64
 from io import BytesIO
 from werkzeug.utils import secure_filename
 import subprocess
+from .utils import convert_utc_to_local
 
 from openpyxl import load_workbook
 
@@ -111,14 +112,17 @@ def procesar_registro():
             imprime_tickets_enabled = True
     # Si 'imprime_setting' no existe, se mantiene en False.
     # === FIN DE LA LÓGICA CORREGIDA ===
-    
+    # === CAMBIO CLAVE ===
+    # Convertir la hora del nuevo registro a la hora local ANTES de enviarla al frontend
+    hora_local_registro = convert_utc_to_local(nuevo_registro.fecha_hora_registro)
     registro_data = {
         'id_registro': nuevo_registro.id_registro,
         'id_persona': persona.id_persona,
         'nombre_persona': persona.nombre_persona,
         'dpto': persona.dpto_ref.nombre_dpto,
         'tipo_control': persona.control_ref.nombre_control,
-        'fecha_hora': nuevo_registro.fecha_hora_registro.strftime('%d/%m/%Y %I:%M:%S %p'),
+         # Usar la hora local formateada
+        'fecha_hora': hora_local_registro.strftime('%d/%m/%Y %I:%M:%S %p'),
         'imprime_ticket': imprime_tickets_enabled
     }
 
@@ -130,7 +134,10 @@ def imprimir_ticket(id_registro):
     registro = Registro.query.get_or_404(id_registro)
     persona = registro.persona_ref
     
-    fecha_hora_str = registro.fecha_hora_registro.strftime('%d/%m/%Y %I:%M:%S %p')
+    # === CAMBIO CLAVE ===
+    # Convertir la hora del registro a hora local
+    hora_local_registro = convert_utc_to_local(registro.fecha_hora_registro)
+    fecha_hora_str = hora_local_registro.strftime('%d/%m/%Y %I:%M:%S %p')
     
     ticket_data_str = (
         f"ID: {persona.id_persona}\n"
@@ -396,6 +403,8 @@ def list_usuarios():
     users = Usuario.query.all()
     form = UsuarioForm()
     return render_template('admin/usuarios.html', title='Usuarios', users=users, form=form)
+
+# app/routes.py
 
 @bp.route('/usuarios/save', methods=['POST'])
 @login_required
@@ -1062,3 +1071,39 @@ def importar_estudiantes_excel():
             return redirect(request.url)
 
     return render_template('admin/importar_estudiantes_excel.html', title="Actualizar Estudiantes")
+
+# app/routes.py
+
+# ... (tus otras rutas) ...
+
+@bp.route('/usuarios/change_password', methods=['POST'])
+@login_required
+@admin_required
+def change_password():
+    user_id = request.form.get('user_id')
+    new_password = request.form.get('new_password')
+    confirm_password = request.form.get('confirm_password')
+
+    if not all([user_id, new_password, confirm_password]):
+        flash('Todos los campos son requeridos.', 'danger')
+        return redirect(url_for('main.list_usuarios'))
+    
+    if len(new_password) < 6:
+        flash('La contraseña debe tener al menos 6 caracteres.', 'danger')
+        return redirect(url_for('main.list_usuarios'))
+        
+    if new_password != confirm_password:
+        flash('Las contraseñas no coinciden.', 'danger')
+        return redirect(url_for('main.list_usuarios'))
+        
+    user = Usuario.query.get(user_id)
+    if not user:
+        flash('Usuario no encontrado.', 'danger')
+        return redirect(url_for('main.list_usuarios'))
+    
+    # Hashear y guardar la nueva contraseña
+    user.password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    db.session.commit()
+    
+    flash(f'La contraseña para el usuario "{user.username}" ha sido cambiada exitosamente.', 'success')
+    return redirect(url_for('main.list_usuarios'))

@@ -97,12 +97,25 @@ class UsuarioForm(FlaskForm):
     rol = QuerySelectField('Rol', query_factory=get_roles, get_label='nombre', allow_blank=False, validators=[DataRequired()])
     submit = SubmitField('Guardar Usuario')
 
+    # === REEMPLAZA ESTA FUNCIÓN COMPLETA ===
     def validate_username(self, username):
-        # Si estamos editando, no queremos que choque consigo mismo
-        if self.id.data:
-            user = Usuario.query.get(self.id.data)
-            if user and user.username == username.data:
-                return # Es el mismo usuario, no hay problema
+        # Primero, buscamos si ya existe un usuario con ese nombre
+        user = Usuario.query.filter_by(username=username.data).first()
         
-        if Usuario.query.filter_by(username=username.data).first():
-            raise ValidationError('Ese nombre de usuario ya está en uso.')
+        # Si se encontró un usuario, debemos determinar si es un conflicto
+        if user:
+            # Si estamos CREANDO un nuevo usuario (el campo ID está vacío),
+            # entonces cualquier usuario encontrado es un duplicado.
+            print("1-us1: ",self.id.data)
+            print("1-us2: ",user.id)
+            if not user.id:
+                raise ValidationError('Ese nombre de usuario ya está en uso. Por favor, elige otro.')
+            
+            # Si estamos EDITANDO (el campo ID tiene un valor),
+            # solo es un error si el ID del usuario encontrado es DIFERENTE
+            # al ID del usuario que estamos editando.
+            print("2-us1: ",self.id.data)
+            print("2-us2: ",user.id)
+            
+            if self.id.data and user.id != int(self.id.data):
+                raise ValidationError('Ese nombre de usuario ya está en uso. Por favor, elige otro.')

@@ -28,7 +28,27 @@ def create_app(config_class=Config):
 
     # 3. Importa los modelos y las rutas DESPUÉS de que 'db' y 'app' estén listos
     from . import routes, models
+    # --- INICIO DE CAMBIO ---
+    # Importa la función de ayuda
+    from .utils import convert_utc_to_local
+
+    @app.template_filter('localtime')
+    def localtime_filter(utc_dt, timezone_str="America/Bogota"):
+        """Filtro de Jinja para convertir UTC a hora local."""
+        local_dt = convert_utc_to_local(utc_dt, timezone_str)
+        if not local_dt:
+            return ""
+        return local_dt.strftime('%d/%m/%Y %I:%M:%S %p')
     
+    @app.template_filter('localtime_timeonly')
+    def localtime_timeonly_filter(utc_dt, timezone_str="America/Bogota"):
+        """Filtro de Jinja para mostrar solo la hora local."""
+        local_dt = convert_utc_to_local(utc_dt, timezone_str)
+        if not local_dt:
+            return ""
+        return local_dt.strftime('%I:%M:%S %p')
+    # --- FIN DE CAMBIO ---
+
     @app.context_processor
     def inject_global_vars():
         """ Inyecta variables globales en todas las plantillas. """
